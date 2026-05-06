@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.imooc.mapper.MerchantOrdersMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.imooc.pojo.MerchantOrders">
+        <id column="id" property="id" />
+        <result column="merchant_order_id" property="merchantOrderId" />
+        <result column="merchant_user_id" property="merchantUserId" />
+        <result column="merchant_company_id" property="merchantCompanyId" />
+        <result column="amount" property="amount" />
+        <result column="pay_method" property="payMethod" />
+        <result column="pay_status" property="payStatus" />
+        <result column="come_from" property="comeFrom" />
+        <result column="return_url" property="returnUrl" />
+        <result column="is_delete" property="isDelete" />
+        <result column="created_time" property="createdTime" />
+        <result column="updated_time" property="updatedTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, merchant_order_id, merchant_user_id, merchant_company_id, amount, pay_method, pay_status, come_from, return_url, is_delete, created_time, updated_time
+    </sql>
+
+</mapper>

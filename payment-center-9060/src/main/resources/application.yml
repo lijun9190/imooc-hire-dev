@@ -1,0 +1,32 @@
+server:
+  port: 9060
+  tomcat:
+    uri-encoding: UTF-8
+
+spring:
+  application:
+    name: payment-center
+  profiles:
+    active: dev
+#  jackson:
+#    default-property-inclusion: non_null  # 设置返回的JSON对象中不包含null字段
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: assign_id
+      banner: false
+      update-strategy: not_empty
+  mapper-locations: classpath*:/mapper/*.xml
+
+# 分页插件助手的配置
+pagehelper:
+  helper-dialect: MYSQL
+  support-methods-arguments: true
+
+# 日志级别
+logging:
+  level:
+    root: info

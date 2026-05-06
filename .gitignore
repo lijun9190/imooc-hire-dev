@@ -1,0 +1,46 @@
+# Maven / Java build output
+target/
+out/
+build/
+*.class
+*.jar
+*.war
+*.ear
+
+# IntelliJ IDEA / Eclipse / VS Code
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.vscode/
+
+# Logs and runtime files
+logs/
+*.log
+*.pid
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local environment and secrets
+.env
+.env.*
+*.local
+application-local.yml
+application-local.yaml
+application-local.properties
+bootstrap-local.yml
+bootstrap-local.yaml
+bootstrap-local.properties
+
+# Test / coverage output
+coverage/
+.nyc_output/
+

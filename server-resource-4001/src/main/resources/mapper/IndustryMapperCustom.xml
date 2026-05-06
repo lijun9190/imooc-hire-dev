@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.imooc.mapper.IndustryMapperCustom">
+
+    <resultMap id="topIndustryWithThirdList"
+               type="com.imooc.pojo.vo.TopIndustryWithThirdListVO">
+        <id column="topId" property="topId" jdbcType="VARCHAR"/>
+
+        <collection property="thirdIndustryList" ofType="com.imooc.pojo.Industry">
+            <id column="id" property="id" jdbcType="VARCHAR"/>
+            <result column="name" property="name" jdbcType="VARCHAR"/>
+            <result column="sort" property="sort" jdbcType="INTEGER"/>
+            <result column="father_id" property="fatherId" jdbcType="VARCHAR"/>
+            <result column="is_leaf" property="isLeaf" jdbcType="TINYINT"/>
+            <result column="level" property="level" jdbcType="INTEGER"/>
+        </collection>
+    </resultMap>
+
+    <select id="getThirdIndustryByTop"
+            parameterType="map"
+            resultType="com.imooc.pojo.Industry">
+        SELECT
+          third.*
+        FROM
+          industry third
+        WHERE
+          third.father_id
+          in
+            (
+	          SELECT
+	            `second`.id
+	          FROM
+	            industry `second`
+	          WHERE
+	            `second`.father_id in (#{paramMap.topIndustryId})
+            )
+    </select>
+
+    <select id="getTopIndustryId" parameterType="map" resultType="string">
+        SELECT
+          top.id
+        FROM industry third
+        RIGHT JOIN industry `second`
+          ON third.father_id = `second`.id
+        RIGHT JOIN industry top
+          ON `second`.father_id = top.id
+        WHERE third.id = #{paramMap.thirdIndustryId}
+    </select>
+
+    <select id="getAllThirdIndustryList" resultMap="topIndustryWithThirdList">
+        SELECT third.*,top.id as topId from industry third
+          LEFT JOIN industry `second`
+        ON third.father_id = `second`.id
+          LEFT JOIN industry top
+        ON `second`.father_id = top.id
+        WHERE third.`level` = 3
+    </select>
+
+</mapper>

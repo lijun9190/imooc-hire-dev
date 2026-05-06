@@ -1,0 +1,31 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.1.121:8848
+
+# MinIO 配置
+minio:
+  endpoint: http://192.168.1.122:9000      # MinIO服务地址
+  fileHost: http://192.168.1.122:9000      # 文件地址host
+  bucketName: imooc                        # 存储桶bucket名称
+  accessKey: imooc                         # 用户名
+  secretKey: imooc123456                   # 密码
+
+# OSS 云存储配置
+oss:
+  endpoint: oss-cn-shanghai.aliyuncs.com                          # OSS服务地址
+  fileHost: http://imooc-hire-dev.oss-cn-shanghai.aliyuncs.com    # 文件地址host
+  bucketName: imooc-hire-dev                                      # 存储桶bucket名称
+  accessKeyId: LAAI4GBSPQFYoMxZDX9MGbrB                           # OSS 秘钥信息
+  accessKeySecret: VpUi2dDDWAkI0RFEmQReDWAyWAiZHB                 # OSS 秘钥信息
+
+zookeeper:
+  curator:
+    #    host: 192.168.1.121:2181,192.168.1.122:2181,192.168.1.123:2181
+    host: 192.168.1.123:2181
+    connectionTimeoutMs: 30000
+    sessionTimeoutMs: 3000
+    sleepMsBetweenRetry: 2000
+    maxRetries: 3
+    namespace: curator-imooc

@@ -1,0 +1,66 @@
+spring:
+  redis:
+    host: 192.168.1.121
+    port: 6379
+    database: 0
+    password: imooc
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.1.121:8848
+    sentinel:
+      transport:
+        port: 8719
+        dashboard: localhost:8080
+    gateway:
+      discovery:
+        locator:
+          enabled: true     # 动态路由，从注册中心根据微服务的名字获得目标节点的地址
+      routes:       # 路由规则（数组）
+        - id: userRoute   # 每一项路由都有一个唯一的id编号，可以自定义
+          uri: lb://user-service    # lb=负载均衡，会动态寻址
+          # uri: http://192.168.1.111:7001
+          predicates:   # 匹配断言，符合条件则放行（可以模糊匹配，或者精确匹配到某个具体的端口和名称）
+            - Path=/u/**,/admininfo/**,/userinfo/**
+        - id: companyRoute
+          uri: lb://company-service
+          predicates:
+            - Path=/c/**,/company/**,/tradeOrder/**
+        - id: authRoute
+          uri: lb://auth-service
+          predicates:
+            - Path=/a/**,/passport/**,/saas/**,/admin/**
+        - id: resourceRoute
+          uri: lb://resource-service
+          predicates:
+            - Path=/industry/**,/dataDict/**,/jobType/**,/sys/**
+        - id: workRoute
+          uri: lb://work-service
+          predicates:
+            - Path=/w/**,/resume/**,/job/**,/counts/**,/report/**
+        - id: fileRoute
+          uri: lb://file-service
+          predicates:
+            - Path=/file/**,/static/**
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedHeaders: "*"
+            allowedMethods: "*"
+            allowCredentials: true
+    loadbalancer:
+      nacos:
+        enabled: true   # 开启基于nacos规则的负载均衡
+  zipkin:
+    base-url: http://192.168.1.123:9411/
+    sender:
+      type: web
+  sleuth:
+    sampler:
+      probability: 1.0
+
+logging:
+  level:
+    org.springframework.cloud.openfeign: debug
+    org.springframework.cloud.sleuth: debug
