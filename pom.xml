@@ -79,6 +79,12 @@
                 <scope>import</scope>
             </dependency>
 
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.32</version>
+            </dependency>
+
             <!-- mysql 驱动 -->
             <dependency>
                 <groupId>mysql</groupId>

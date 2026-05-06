@@ -1,8 +1,6 @@
 package com.imooc.filter;
 
-import com.google.gson.Gson;
 import com.imooc.base.BaseInfoProperties;
-import com.imooc.grace.result.GraceJSONResult;
 import com.imooc.grace.result.ResponseStatusEnum;
 import com.imooc.utils.JWTUtils;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -12,14 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -40,6 +34,9 @@ public class SecurityFilterJWT extends BaseInfoProperties implements GlobalFilte
     @Autowired
     private JWTUtils jwtUtils;
 
+    @Autowired
+    private GatewayErrorResponseWriter gatewayErrorResponseWriter;
+
     // 路径匹配的规则器
     private AntPathMatcher antPathMatcher = new AntPathMatcher();
 
@@ -48,7 +45,7 @@ public class SecurityFilterJWT extends BaseInfoProperties implements GlobalFilte
 
         // 1. 获取当前的请求路径
         String url = exchange.getRequest().getURI().getPath();
-        log.info("SecurityFilterJWT url=" + url);
+        log.info("SecurityFilterJWT url={}", url);
 
         // 2. 获得所有的需要排除校验的url list
         List<String> excludeList = excludeUrlProperties.getUrls();
@@ -86,7 +83,7 @@ public class SecurityFilterJWT extends BaseInfoProperties implements GlobalFilte
         if (StringUtils.isNotBlank(userToken)) {
             String[] tokenArr = userToken.split(JWTUtils.at);
             if (tokenArr.length < 2) {
-                return renderErrorMsg(exchange, ResponseStatusEnum.UN_LOGIN);
+                return gatewayErrorResponseWriter.write(exchange, ResponseStatusEnum.UN_LOGIN);
             }
 
             // 获得jwt的令牌与前缀
@@ -108,7 +105,7 @@ public class SecurityFilterJWT extends BaseInfoProperties implements GlobalFilte
         // 不放行，token校验在jwt校验的自身代码逻辑中，到达此处表示都是漏掉的可能没有配置在excludeList
 //        GraceException.display(ResponseStatusEnum.UN_LOGIN);
 //        return chain.filter(exchange);
-        return renderErrorMsg(exchange, ResponseStatusEnum.UN_LOGIN);
+        return gatewayErrorResponseWriter.write(exchange, ResponseStatusEnum.UN_LOGIN);
     }
 
     public Mono<Void> dealJWT(String jwt, ServerWebExchange exchange, GatewayFilterChain chain, String key) {
@@ -117,11 +114,11 @@ public class SecurityFilterJWT extends BaseInfoProperties implements GlobalFilte
             ServerWebExchange serverWebExchange = setNewHeader(exchange, key, userJson);
             return chain.filter(serverWebExchange);
         } catch (ExpiredJwtException e) {
-            e.printStackTrace();
-            return renderErrorMsg(exchange, ResponseStatusEnum.JWT_EXPIRE_ERROR);
+            log.warn("JWT expired in gateway", e);
+            return gatewayErrorResponseWriter.write(exchange, ResponseStatusEnum.JWT_EXPIRE_ERROR);
         } catch (Exception e) {
-            e.printStackTrace();
-            return renderErrorMsg(exchange, ResponseStatusEnum.JWT_SIGNATURE_ERROR);
+            log.warn("JWT invalid in gateway", e);
+            return gatewayErrorResponseWriter.write(exchange, ResponseStatusEnum.JWT_SIGNATURE_ERROR);
         }
     }
 
@@ -129,13 +126,13 @@ public class SecurityFilterJWT extends BaseInfoProperties implements GlobalFilte
                                           String headerKey,
                                           String headerValue) {
 
-        System.out.println("headerKey = " + headerKey);
-        System.out.println("headerValue = " + headerValue);
+        log.debug("headerKey = {}", headerKey);
+        log.debug("headerValue = {}", headerValue);
 
         try {
             headerValue = URLEncoder.encode(headerValue, StandardCharsets.UTF_8.toString());
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            log.warn("Encode gateway user header failed", e);
         }
 
         // 重新构建新的request
@@ -146,35 +143,6 @@ public class SecurityFilterJWT extends BaseInfoProperties implements GlobalFilte
         // 替换原来的request
         ServerWebExchange newExchange = exchange.mutate().request(newRequest).build();
         return newExchange;
-    }
-
-    /**
-     * 重新包装并且返回错误信息
-     * @param exchange
-     * @param statusEnum
-     * @return
-     */
-    public Mono<Void> renderErrorMsg(ServerWebExchange exchange,
-                                     ResponseStatusEnum statusEnum) {
-        // 1. 获得response
-        ServerHttpResponse response = exchange.getResponse();
-
-        // 2. 构建jsonResult
-        GraceJSONResult jsonResult = GraceJSONResult.exception(statusEnum);
-
-        // 3. 修改response的code为500
-        response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-
-        // 4. 设定header类型
-        if (!response.getHeaders().containsKey("Content-Type"))
-            response.getHeaders().add("Content-Type", MimeTypeUtils.APPLICATION_JSON_VALUE);
-
-        // 5. 转换json并且向response中写入数据
-        String resultJson = new Gson().toJson(jsonResult);
-        DataBuffer dataBuffer = response
-                                    .bufferFactory()
-                                    .wrap(resultJson.getBytes(StandardCharsets.UTF_8));
-        return response.writeWith(Mono.just(dataBuffer));
     }
 
 

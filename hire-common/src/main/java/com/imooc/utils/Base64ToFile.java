@@ -2,9 +2,9 @@ package com.imooc.utils;
 
 import com.imooc.exceptions.GraceException;
 import com.imooc.grace.result.ResponseStatusEnum;
-import sun.misc.BASE64Decoder;
 
 import java.io.*;
+import java.util.Base64;
 
 public class Base64ToFile {
     // 传入base64编码字符以及保存路径
@@ -29,8 +29,7 @@ public class Base64ToFile {
             base64 = base64.substring(28);
             System.out.println("包含pdf"+base64);
         }
-        BASE64Decoder decoder = new BASE64Decoder();
-        byte[] bytes = decoder.decodeBuffer(base64);
+        byte[] bytes = Base64.getMimeDecoder().decode(base64);
         for (int i = 0; i<bytes.length; ++i) {
             // 调整异常数据
             if (bytes[i] < 0) {
@@ -62,4 +61,3 @@ public class Base64ToFile {
 //        return "生成文件成功!";
     }
 }
-

@@ -12,9 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
-import sun.misc.BASE64Encoder;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 
 @Component
@@ -59,7 +60,7 @@ public class JWTUtils {
         log.info("Nacos jwt key = " + JWT_KEY);
 
         // 1. 对秘钥进行base64编码
-        String base64 = new BASE64Encoder().encode(userKey.getBytes());
+        String base64 = Base64.getEncoder().encodeToString(userKey.getBytes(StandardCharsets.UTF_8));
 
         // 2. 对base64生成一个秘钥的对象
         SecretKey secretKey = Keys.hmacShaKeyFor(base64.getBytes());
@@ -101,7 +102,7 @@ public class JWTUtils {
         log.info("Nacos jwt key = " + JWT_KEY);
 
         // 1. 对秘钥进行base64编码
-        String base64 = new BASE64Encoder().encode(userKey.getBytes());
+        String base64 = Base64.getEncoder().encodeToString(userKey.getBytes(StandardCharsets.UTF_8));
 
         // 2. 对base64生成一个秘钥的对象
         SecretKey secretKey = Keys.hmacShaKeyFor(base64.getBytes());

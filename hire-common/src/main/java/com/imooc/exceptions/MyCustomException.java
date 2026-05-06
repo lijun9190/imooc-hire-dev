@@ -1,7 +1,6 @@
 package com.imooc.exceptions;
 
 import com.imooc.grace.result.ResponseStatusEnum;
-import lombok.Data;
 
 /**
  * 自定义异常
@@ -11,7 +10,7 @@ import lombok.Data;
  */
 public class MyCustomException extends RuntimeException {
 
-    private ResponseStatusEnum responseStatusEnum;
+    private final ResponseStatusEnum responseStatusEnum;
 
     public MyCustomException(ResponseStatusEnum responseStatusEnum) {
         super("异常状态码为：" + responseStatusEnum.status() +
@@ -21,8 +20,5 @@ public class MyCustomException extends RuntimeException {
 
     public ResponseStatusEnum getResponseStatusEnum() {
         return responseStatusEnum;
-    }
-    public void setResponseStatusEnum(ResponseStatusEnum responseStatusEnum) {
-        this.responseStatusEnum = responseStatusEnum;
     }
 }

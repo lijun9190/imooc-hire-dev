@@ -1,32 +1,20 @@
 package com.imooc.filter;
 
-import com.google.gson.Gson;
 import com.imooc.base.BaseInfoProperties;
-import com.imooc.grace.result.GraceJSONResult;
 import com.imooc.grace.result.ResponseStatusEnum;
 import com.imooc.utils.IPUtil;
-import com.imooc.utils.JWTUtils;
-import io.jsonwebtoken.ExpiredJwtException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Component
@@ -35,6 +23,9 @@ public class IPLimitFilter extends BaseInfoProperties implements GlobalFilter, O
 
     @Autowired
     private ExcludeUrlProperties excludeUrlProperties;
+
+    @Autowired
+    private GatewayErrorResponseWriter gatewayErrorResponseWriter;
 
     // 路径匹配的规则器
     private AntPathMatcher antPathMatcher = new AntPathMatcher();
@@ -60,7 +51,7 @@ public class IPLimitFilter extends BaseInfoProperties implements GlobalFilter, O
             for (String limitUrl : ipLimitList) {
                 if (antPathMatcher.matchStart(limitUrl, url)) {
                     // 如果匹配到，则表明需要进行ip的拦截校验
-                    log.info("IPLimitFilter - 拦截到需要进行ip限流校验的方法：URL = " + url);
+                    log.info("IPLimitFilter - 拦截到需要进行ip限流校验的方法：URL = {}", url);
                     return doLimit(exchange, chain);
                 }
             }
@@ -92,7 +83,7 @@ public class IPLimitFilter extends BaseInfoProperties implements GlobalFilter, O
         long limitLeftTimes = redis.ttl(ipRedisLimitedKey);
         if (limitLeftTimes > 0) {
             // 终止请求，返回错误
-            return renderErrorMsg(exchange,
+            return gatewayErrorResponseWriter.write(exchange,
                     ResponseStatusEnum.SYSTEM_ERROR_BLACK_IP);
         }
 
@@ -109,40 +100,11 @@ public class IPLimitFilter extends BaseInfoProperties implements GlobalFilter, O
             // 限制ip访问的时间[limitTimes]
             redis.set(ipRedisLimitedKey, ipRedisLimitedKey, limitTimes);
             // 终止请求，返回错误
-            return renderErrorMsg(exchange,
+            return gatewayErrorResponseWriter.write(exchange,
                     ResponseStatusEnum.SYSTEM_ERROR_BLACK_IP);
         }
 
         return chain.filter(exchange);
-    }
-
-    /**
-     * 重新包装并且返回错误信息
-     * @param exchange
-     * @param statusEnum
-     * @return
-     */
-    public Mono<Void> renderErrorMsg(ServerWebExchange exchange,
-                                     ResponseStatusEnum statusEnum) {
-        // 1. 获得response
-        ServerHttpResponse response = exchange.getResponse();
-
-        // 2. 构建jsonResult
-        GraceJSONResult jsonResult = GraceJSONResult.exception(statusEnum);
-
-        // 3. 修改response的code为500
-        response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-
-        // 4. 设定header类型
-        if (!response.getHeaders().containsKey("Content-Type"))
-            response.getHeaders().add("Content-Type", MimeTypeUtils.APPLICATION_JSON_VALUE);
-
-        // 5. 转换json并且向response中写入数据
-        String resultJson = new Gson().toJson(jsonResult);
-        DataBuffer dataBuffer = response
-                                    .bufferFactory()
-                                    .wrap(resultJson.getBytes(StandardCharsets.UTF_8));
-        return response.writeWith(Mono.just(dataBuffer));
     }
 
     // 过滤器的顺序，数字越小优先级则越大
